@@ -1,8 +1,13 @@
 # Orders Analytics
 
+[![CI](https://github.com/iamRio/orders-analytics/actions/workflows/ci.yml/badge.svg)](https://github.com/iamRio/orders-analytics/actions/workflows/ci.yml)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Orders Analytics is the project scaffold for a technical challenge focused on order data cleaning, SQL reporting, and natural-language SQL generation through a FastAPI endpoint.
 
-This repository is intentionally prepared as a clean and reviewable starting point. The current phase covers project initialization, dependency management, environment configuration, and project structure only. The data-generation and API functionality are defined in the roadmap and will be implemented in subsequent phases.
+This repository is intentionally prepared as a clean and reviewable starting point. The project is now ready for the data-generation and cleaning task, which is the second stage defined in the roadmap. The SQLite persistence and API functionality remain planned for later phases.
 
 ## Objective
 
@@ -14,6 +19,17 @@ The project must support the following scope once implemented:
 - Expose exactly two SQL views: `sales_by_month_country` for monthly sales by country and `top_customers` for the top 10 customers.
 - Provide a FastAPI endpoint that accepts natural-language questions and translates them into validated read-only SQL queries.
 - Test the cleaning logic, SQL validation, and LLM-backed endpoint behavior with `pytest` while avoiding real external services.
+
+## Current implementation
+
+This repository includes the deterministic raw-data generation module and the cleaning pipeline for the dataset. The CLI entry points are available from the `scripts/` folder:
+
+```bash
+uv run python scripts/generate_raw_orders.py --rows 1200 --seed 42
+uv run python scripts/clean_orders.py --input data/raw/orders_raw.csv --output data/cleaned/orders_clean.csv
+```
+
+The generator creates a seed-based dataset with malformed dates, duplicate rows, and blank amounts. The cleaner normalizes date strings, strips whitespace, removes invalid records, drops exact duplicates, and writes a valid CSV.
 
 ## Stack
 
@@ -71,7 +87,7 @@ This project was prepared under a structured engineering workflow. The AI assist
 - document the scope and the implementation roadmap,
 - avoid implementing the business logic before the required phase is reached.
 
-The accepted direction was to keep the repository focused on project preparation and technical setup without implementing the data-generation, cleaning, SQL view, or API logic. A few adjustments were made to ensure the tooling remained compatible with modern Python and `uv`, and to keep the initial repository aligned with the technical challenge requirements instead of overbuilding the architecture.
+The accepted direction was to keep the repository focused on project preparation and then progressively implement the required data pipeline. A few adjustments were made to ensure the tooling remained compatible with modern Python and `uv`, and to keep the repository aligned with the challenge requirements instead of overbuilding the architecture.
 
 ## Future improvements
 
@@ -97,4 +113,4 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-This phase is intentionally limited to infrastructure and project readiness checks.
+This phase includes the raw-dataset generator and cleaning pipeline checks. The remaining phases cover SQLite persistence, view creation, and the natural-language SQL API.

@@ -20,15 +20,17 @@ Completed tasks:
 
 ## Phase 2: data pipeline
 
-Status: pending.
+Status: completed for the raw-data generation and CSV cleaning stage.
 
-Planned work:
+Completed work:
 
 - create a deterministic dataset generator for 1,000+ orders,
 - include malformed rows deliberately to test cleaning behavior,
 - implement CSV cleaning logic for dates, blank amounts, and duplicate rows,
-- persist cleaned data in SQLite,
-- verify data integrity before downstream reporting.
+- verify data integrity before the later persistence phase,
+- document the CLI usage for generation and cleaning.
+
+Note: SQLite persistence is intentionally not implemented yet, as required by the challenge scope for this task.
 
 ## Phase 3: SQL validation and views
 
