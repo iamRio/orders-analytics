@@ -47,16 +47,27 @@ The guardrails are implemented in `src/orders_analytics/sql/validation.py` and t
 
 ## Phase 4: API and LLM integration
 
-Status: pending.
+Status: completed.
 
-Planned work:
+Completed work:
 
 - build a FastAPI application with a single natural-language query endpoint,
-- generate SQL via an LLM,
-- validate SQL before execution,
-- restrict access to authorized tables and views,
-- return clear errors for invalid or disallowed queries,
+- generate SQL via an LLM service while keeping the LLM at the boundary and never executing SQL directly,
+- validate SQL before execution using SQLGlot-based guardrails,
+- restrict access to the approved analytical views only,
+- return explicit HTTP errors for LLM failures, invalid SQL, and unauthorized access,
 - keep the interface focused on read-only operations.
+
+## Phase 4.1: SQLite persistence and view materialization
+
+Status: completed.
+
+Completed work:
+
+- add a SQLite loader that reads the cleaned CSV into the configured database,
+- create or replace the `orders` table with normalized decimal-text amounts,
+- create or replace the `sales_by_month_country` and `top_customers` views from the approved SQL definitions,
+- validate the persisted data through the read-only execution helper.
 
 ## Phase 5: automated tests and hardening
 

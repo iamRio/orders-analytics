@@ -7,7 +7,7 @@ CREATE VIEW sales_by_month_country AS
 SELECT
     substr(date, 1, 7) AS month,
     country,
-    ROUND(SUM(CAST(amount AS DECIMAL(18, 2))), 2) AS total_amount,
+    printf('%.2f', ROUND(SUM(CAST(amount AS DECIMAL(18, 2))), 2)) AS total_amount,
     COUNT(*) AS order_count
 FROM orders
 GROUP BY substr(date, 1, 7), country
@@ -18,7 +18,7 @@ TOP_CUSTOMERS_VIEW_SQL = """
 CREATE VIEW top_customers AS
 SELECT
     customer,
-    ROUND(SUM(CAST(amount AS DECIMAL(18, 2))), 2) AS total_amount,
+    printf('%.2f', ROUND(SUM(CAST(amount AS DECIMAL(18, 2))), 2)) AS total_amount,
     COUNT(*) AS order_count
 FROM orders
 GROUP BY customer
