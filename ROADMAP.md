@@ -30,7 +30,7 @@ Completed work:
 - verify data integrity before the later persistence phase,
 - document the CLI usage for generation and cleaning.
 
-Note: SQLite persistence is intentionally not implemented yet, as required by the challenge scope for this task.
+SQLite persistence is implemented in Phase 4.1.
 
 ## Phase 3: SQL validation and views
 
@@ -84,11 +84,13 @@ Completed work:
 
 ## Phase 6: final review
 
-Status: pending.
+Status: completed.
 
-Planned work:
+Completed work:
 
 - review project quality against the challenge requirements,
 - validate that no extra features were added,
 - confirm the documentation matches the implemented scope,
-- ensure all code, comments, and docs remain in technical English.
+- ensure all code, comments, and docs remain in technical English,
+- use integer minor units when aggregating normalized decimal-text amounts in analytical views,
+- prevent API error responses from exposing provider errors or internal database paths.

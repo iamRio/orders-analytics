@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import logging
 import re
 
 from openai import OpenAI
 
 from orders_analytics.config import Settings
+
+logger = logging.getLogger(__name__)
 
 
 class LLMServiceError(RuntimeError):
@@ -50,7 +53,8 @@ class LLMService:
                 ],
             )
         except Exception as exc:  # pragma: no cover - exercise through unit tests with a stub
-            raise LLMServiceError(f"The LLM request failed: {exc}") from exc
+            logger.exception("LLM SQL generation request failed.")
+            raise LLMServiceError("The SQL generation service is unavailable.") from exc
 
         content = response.choices[0].message.content
         if not content:

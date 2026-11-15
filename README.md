@@ -5,13 +5,13 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Orders Analytics is the project scaffold for a technical challenge focused on order data cleaning, SQL reporting, and natural-language SQL generation through a FastAPI endpoint.
+Orders Analytics is an implementation of a technical challenge focused on order data cleaning, SQLite reporting, and natural-language SQL generation through a FastAPI endpoint.
 
-This repository is intentionally prepared as a clean and reviewable starting point. The project includes the deterministic data-generation and CSV-cleaning pipeline, the SQL validation guardrails, the read-only database helper, the LLM boundary, and the FastAPI endpoint that translates natural-language requests into safe, view-scoped SQL. SQLite persistence remains outside the current scope; the API boundary is implemented without allowing write access or direct table queries.
+This repository implements a deterministic order-data pipeline, SQLite persistence with two analytical views, and a FastAPI endpoint that translates natural-language requests into safe, view-scoped SQL. The API only executes validated read-only queries and does not provide direct access to the base table.
 
 ## Objective
 
-The project must support the following scope once implemented:
+The project supports the following challenge requirements:
 
 - Generate a CSV with at least 1,000 orders containing date, customer, country, product, amount, and status values.
 - Clean malformed records before persistence.
@@ -22,7 +22,7 @@ The project must support the following scope once implemented:
 
 ## Current implementation
 
-This repository includes the deterministic raw-data generation module, the cleaning pipeline, the SQL validation layer for the approved analytical views, the read-only database execution helper, the LLM boundary, and the FastAPI endpoint that turns a natural-language question into a validated, read-only SQL query. The utility modules live under `src/orders_analytics/` and are structured around the project rules.
+The application includes deterministic raw-data generation, CSV cleaning, SQLite loading, SQL validation for the approved analytical views, a read-only database execution helper, an LLM boundary, and a FastAPI endpoint that turns a natural-language question into a validated, read-only SQL query. Package modules live under `src/orders_analytics/`.
 
 The raw-data pipeline remains available through the CLI entry points:
 
@@ -32,7 +32,7 @@ uv run python scripts/clean_orders.py --input data/raw/orders_raw.csv --output d
 uv run python scripts/load_orders_db.py --input data/cleaned/orders_clean.csv --database-url sqlite:///./data/database/orders.db
 ```
 
-The generator creates a seed-based dataset with malformed dates, duplicate rows, and blank amounts. The cleaner normalizes date strings, strips whitespace, removes invalid records, drops exact duplicates, and writes a valid CSV. The loader writes the cleaned data to SQLite using normalized decimal text for the `amount` column (for example, `1500.00`), then creates or replaces the `orders` table and the `sales_by_month_country` and `top_customers` views.
+The generator creates a seed-based dataset with malformed dates, duplicate rows, and blank amounts. The cleaner normalizes date strings, strips whitespace, removes invalid records, drops exact duplicates, and writes a valid CSV. The loader writes the cleaned data to SQLite using normalized decimal text for the `amount` column (for example, `1500.00`), then creates or replaces the `orders` table and the `sales_by_month_country` and `top_customers` views. The views parse amounts as integer minor units for exact aggregation and format totals as decimal text.
 
 The SQL layer defines the `sales_by_month_country` and `top_customers` views and validates that a query is a single read-only `SELECT` restricted to those approved views. The database helper enforces a read-only SQLite URI, the LLM service prepares natural-language prompts for valid SQL generation without allowing direct execution, and the FastAPI endpoint composes the workflow into a single secure request/response path.
 
@@ -92,20 +92,11 @@ This project was prepared under a structured engineering workflow. The AI assist
 - document the scope and the implementation roadmap,
 - avoid implementing the business logic before the required phase is reached.
 
-The accepted direction was to keep the repository focused on project preparation and then progressively implement the required data pipeline. A few adjustments were made to ensure the tooling remained compatible with modern Python and `uv`, and to keep the repository aligned with the challenge requirements instead of overbuilding the architecture.
+The accepted direction was to implement the challenge requirements incrementally while keeping modules under `src/orders_analytics/`, restricting query execution to approved views, and avoiding unrelated features. During review, documentation was corrected to reflect completed SQLite persistence, view totals were changed to use integer minor units for exact aggregation, and API error responses were hardened to avoid exposing provider or database details.
 
 ## Future improvements
 
-The roadmap documents follow-up work for the implementation phase, such as:
-
-- deterministic test data generation,
-- robust CSV cleaning and validation,
-- SQL view definitions,
-- a validated read-only SQL execution layer,
-- LLM integration with prompt and query restrictions,
-- and endpoint-level API tests with mocked LLM responses.
-
-The secure query-preparation pipeline, API contract, and hardening checks are in place, and the remaining work is outside this phase.
+The required data pipeline, persistence, analytical views, read-only SQL validation, API integration, and automated hardening checks are implemented. Additional features are intentionally not included in this challenge scope.
 
 ## Validation
 
@@ -117,4 +108,4 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-This phase includes the raw-dataset generator, cleaning flow, SQL validation checks, the read-only database helper, the LLM prompt service, the FastAPI endpoint, and the final hardening tests covering empty and disallowed queries, invalid database targets, and loader edge cases.
+Validation covers the raw-data generator, cleaning flow, SQLite loader and views, SQL validation, read-only execution, LLM failure handling, and the FastAPI endpoint with mocked LLM behavior.

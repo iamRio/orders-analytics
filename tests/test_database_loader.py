@@ -67,12 +67,51 @@ def test_load_orders_db_persists_clean_csv_and_materializes_views(tmp_path, monk
         {"month": "2024-02", "country": "Mexico", "total_amount": "95.00"},
     ]
 
+    customers = execute_read_only_query("SELECT customer, total_amount FROM top_customers")
+    assert customers == [
+        {"customer": "Ana García", "total_amount": "1595.00"},
+        {"customer": "Carlos Silva", "total_amount": "275.50"},
+    ]
+
+
+def test_views_sum_minor_units_and_sort_customers_numerically(tmp_path) -> None:
+    """Analytical view totals should preserve cents and use numeric rank order."""
+    csv_path = tmp_path / "orders_clean.csv"
+    database_path = tmp_path / "orders.db"
+    rows = [
+        {
+            "date": "2024-01-01",
+            "customer": "Small Buyer",
+            "country": "Spain",
+            "product": "Item",
+            "amount": "0.01",
+            "status": "paid",
+        }
+        for _ in range(100)
+    ]
+    rows.append(
+        {
+            "date": "2024-01-01",
+            "customer": "Large Buyer",
+            "country": "Spain",
+            "product": "Item",
+            "amount": "10.00",
+            "status": "paid",
+        }
+    )
+    pd.DataFrame(rows).to_csv(csv_path, index=False)
+
+    load_orders_db(
+        input_path=csv_path,
+        database_url=f"sqlite:///{database_path.as_posix()}",
+    )
     customers = execute_read_only_query(
-        "SELECT customer, total_amount FROM top_customers ORDER BY total_amount DESC, customer"
+        "SELECT customer, total_amount FROM top_customers",
+        database_url=f"sqlite:///{database_path.as_posix()}",
     )
     assert customers == [
-        {"customer": "Carlos Silva", "total_amount": "275.50"},
-        {"customer": "Ana García", "total_amount": "1595.00"},
+        {"customer": "Large Buyer", "total_amount": "10.00"},
+        {"customer": "Small Buyer", "total_amount": "1.00"},
     ]
 
 

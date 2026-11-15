@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import logging
+
 from fastapi import FastAPI, HTTPException, status
 
 from orders_analytics.config import settings
@@ -9,6 +11,8 @@ from orders_analytics.database.connection import SQLExecutionError, execute_read
 from orders_analytics.schemas.query import QueryRequest, QueryResponse
 from orders_analytics.services.llm import LLMService, LLMServiceError
 from orders_analytics.sql.validation import SQLValidationError, validate_sql_query
+
+logger = logging.getLogger(__name__)
 
 
 def create_app() -> FastAPI:
@@ -32,9 +36,10 @@ def create_app() -> FastAPI:
         try:
             sql = llm_service.generate_sql(payload.question)
         except LLMServiceError as exc:
+            logger.warning("SQL generation failed: %s", exc)
             raise HTTPException(
                 status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=str(exc),
+                detail="The SQL generation service could not process the request.",
             ) from exc
 
         try:
@@ -48,9 +53,10 @@ def create_app() -> FastAPI:
         try:
             rows = execute_read_only_query(validated_sql)
         except SQLExecutionError as exc:
+            logger.exception("Read-only analytical query execution failed.")
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail=str(exc),
+                detail="The analytical query could not be completed.",
             ) from exc
 
         return QueryResponse(

@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi.testclient import TestClient
 
 from orders_analytics.api import app
+from orders_analytics.database.connection import SQLExecutionError
 from orders_analytics.services.llm import LLMService, LLMServiceError
 
 client = TestClient(app)
@@ -58,4 +59,22 @@ def test_query_endpoint_surfaces_llm_failures(monkeypatch) -> None:
     response = client.post("/query", json={"question": "Show the top customers"})
 
     assert response.status_code == 502
-    assert "unable to connect" in response.json()["detail"].lower()
+    assert "unable to connect" not in response.json()["detail"].lower()
+
+
+def test_query_endpoint_does_not_expose_database_errors(monkeypatch) -> None:
+    """Database failures should return a safe message instead of internal details."""
+
+    def fake_generate_sql(self: LLMService, question: str) -> str:
+        return "SELECT * FROM sales_by_month_country"
+
+    def fake_execute_query(query: str) -> list[dict[str, object]]:
+        raise SQLExecutionError("Database file unavailable at C:/private/orders.db")
+
+    monkeypatch.setattr(LLMService, "generate_sql", fake_generate_sql)
+    monkeypatch.setattr("orders_analytics.api.execute_read_only_query", fake_execute_query)
+
+    response = client.post("/query", json={"question": "Show sales"})
+
+    assert response.status_code == 503
+    assert "C:/private/orders.db" not in response.json()["detail"]
