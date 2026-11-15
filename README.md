@@ -7,7 +7,7 @@
 
 Orders Analytics is the project scaffold for a technical challenge focused on order data cleaning, SQL reporting, and natural-language SQL generation through a FastAPI endpoint.
 
-This repository is intentionally prepared as a clean and reviewable starting point. The project is now ready for the data-generation and cleaning task, which is the second stage defined in the roadmap. The SQLite persistence and API functionality remain planned for later phases.
+This repository is intentionally prepared as a clean and reviewable starting point. The project now includes the deterministic data-generation and CSV-cleaning task, and the next implemented stage adds SQL validation plus the authorized analytical views. SQLite persistence and the API layer remain planned for later phases.
 
 ## Objective
 
@@ -22,7 +22,9 @@ The project must support the following scope once implemented:
 
 ## Current implementation
 
-This repository includes the deterministic raw-data generation module and the cleaning pipeline for the dataset. The CLI entry points are available from the `scripts/` folder:
+This repository includes the deterministic raw-data generation module, the cleaning pipeline, and the SQL validation layer for the approved analytical views. The utility modules live under `src/orders_analytics/` and are structured around the project rules.
+
+The raw-data pipeline remains available through the CLI entry points:
 
 ```bash
 uv run python scripts/generate_raw_orders.py --rows 1200 --seed 42
@@ -30,6 +32,8 @@ uv run python scripts/clean_orders.py --input data/raw/orders_raw.csv --output d
 ```
 
 The generator creates a seed-based dataset with malformed dates, duplicate rows, and blank amounts. The cleaner normalizes date strings, strips whitespace, removes invalid records, drops exact duplicates, and writes a valid CSV.
+
+The SQL layer defines the `sales_by_month_country` and `top_customers` views and validates that a query is a single read-only `SELECT` restricted to those approved views.
 
 ## Stack
 

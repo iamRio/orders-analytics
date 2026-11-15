@@ -34,14 +34,16 @@ Note: SQLite persistence is intentionally not implemented yet, as required by th
 
 ## Phase 3: SQL validation and views
 
-Status: pending.
+Status: completed.
 
-Planned work:
+Completed work:
 
 - define the `sales_by_month_country` view for monthly sales by country,
 - define the `top_customers` view for the top 10 customers,
 - validate SQL definitions against the project constraints,
 - keep the SQL surface limited to read-only operations for the API layer.
+
+The guardrails are implemented in `src/orders_analytics/sql/validation.py` and the view definitions live in `src/orders_analytics/sql/views.py`.
 
 ## Phase 4: API and LLM integration
 
