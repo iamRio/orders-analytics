@@ -105,7 +105,7 @@ The roadmap documents follow-up work for the implementation phase, such as:
 - LLM integration with prompt and query restrictions,
 - and endpoint-level API tests with mocked LLM responses.
 
-The secure query-preparation pipeline and API contract are now in place, and the remaining work is outside this phase.
+The secure query-preparation pipeline, API contract, and hardening checks are in place, and the remaining work is outside this phase.
 
 ## Validation
 
@@ -117,4 +117,4 @@ uv run ruff check .
 uv run ruff format --check .
 ```
 
-This phase includes the raw-dataset generator, cleaning flow, SQL validation checks, the read-only database helper, the LLM prompt service, and the FastAPI endpoint that composes these pieces into a single natural-language query experience.
+This phase includes the raw-dataset generator, cleaning flow, SQL validation checks, the read-only database helper, the LLM prompt service, the FastAPI endpoint, and the final hardening tests covering empty and disallowed queries, invalid database targets, and loader edge cases.

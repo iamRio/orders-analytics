@@ -71,14 +71,15 @@ Completed work:
 
 ## Phase 5: automated tests and hardening
 
-Status: pending.
+Status: completed.
 
-Planned work:
+Completed work:
 
 - add `pytest` coverage for data cleaning,
 - validate query restrictions and SQL safety checks,
 - test the endpoint with a mocked LLM response,
 - verify edge cases for invalid queries and failure paths,
+- harden the SQLite execution and loader paths against memory databases and invalid empty queries,
 - ensure the repository remains deterministic and easy to run locally.
 
 ## Phase 6: final review

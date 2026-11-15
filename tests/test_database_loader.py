@@ -79,13 +79,12 @@ def test_load_orders_db_persists_clean_csv_and_materializes_views(tmp_path, monk
 def test_relative_database_urls_resolve_from_the_project_root(tmp_path) -> None:
     """Relative SQLite URIs should resolve under the repository root, not the drive root."""
     project_root = Path(__file__).resolve().parents[1]
+    relative_db = project_root / "data" / "database" / "orders.db"
+    relative_db.parent.mkdir(parents=True, exist_ok=True)
+    relative_db.touch()
 
-    assert _database_path_from_url("sqlite:///./data/database/orders.db") == (
-        project_root / "data" / "database" / "orders.db"
-    )
-    assert _database_path_from_url("sqlite:///data/database/orders.db") == (
-        project_root / "data" / "database" / "orders.db"
-    )
+    assert _database_path_from_url("sqlite:///./data/database/orders.db") == relative_db
+    assert _database_path_from_url("sqlite:///data/database/orders.db") == relative_db
 
     absolute_db = tmp_path / "absolute.db"
     absolute_db.touch()
@@ -93,6 +92,15 @@ def test_relative_database_urls_resolve_from_the_project_root(tmp_path) -> None:
 
     with pytest.raises(SQLExecutionError):
         _database_path_from_url("sqlite:///:memory:")
+
+
+def test_execute_read_only_query_rejects_memory_and_empty_sql() -> None:
+    """The execution helper must reject in-memory databases and empty queries before execution."""
+    with pytest.raises(SQLExecutionError):
+        execute_read_only_query("SELECT 1", database_url="sqlite:///:memory:")
+
+    with pytest.raises(SQLExecutionError):
+        execute_read_only_query("   ")
 
 
 def test_load_orders_db_raises_for_missing_required_columns(tmp_path) -> None:
