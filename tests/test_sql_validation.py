@@ -41,6 +41,19 @@ def test_invalid_sql_is_rejected() -> None:
             validate_sql_query(query)
 
 
+def test_syntax_and_policy_failures_have_distinct_safe_messages() -> None:
+    """Syntax errors and security-policy rejections should be distinguishable."""
+    with pytest.raises(SQLValidationError) as syntax_error:
+        validate_sql_query("SELEC * FROM sales_by_month_country")
+    assert "invalid syntax" in str(syntax_error.value).lower()
+    assert "SELECT FROM" not in str(syntax_error.value)
+
+    with pytest.raises(SQLValidationError) as policy_error:
+        validate_sql_query("SELECT * FROM orders")
+    assert "security policy" in str(policy_error.value).lower()
+    assert "orders" in str(policy_error.value).lower()
+
+
 def test_unapproved_sql_ddl_and_multiple_statements_are_blocked() -> None:
     """The guardrails must reject DDL and multiple SQL statements before execution."""
     with pytest.raises(SQLValidationError):
@@ -48,3 +61,15 @@ def test_unapproved_sql_ddl_and_multiple_statements_are_blocked() -> None:
 
     with pytest.raises(SQLValidationError):
         validate_sql_query("SELECT * FROM sales_by_month_country; DROP TABLE orders")
+
+
+def test_ctes_are_allowed_only_when_their_physical_sources_are_approved() -> None:
+    """CTE aliases are not tables, but undeclared or unauthorized sources must be rejected."""
+    valid_query = "WITH cte AS (SELECT * FROM sales_by_month_country) SELECT * FROM cte"
+    assert "sales_by_month_country" in validate_sql_query(valid_query)
+
+    with pytest.raises(SQLValidationError):
+        validate_sql_query("SELECT * FROM sales_by_month_country JOIN cte ON 1 = 1")
+
+    with pytest.raises(SQLValidationError):
+        validate_sql_query("WITH report AS (SELECT * FROM orders) SELECT * FROM report")

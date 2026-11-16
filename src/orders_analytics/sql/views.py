@@ -20,7 +20,8 @@ WITH monthly_totals AS (
 SELECT
     month,
     country,
-    printf('%d.%02d', total_cents / 100, abs(total_cents % 100)) AS total_amount,
+    CASE WHEN total_cents < 0 THEN '-' ELSE '' END
+        || printf('%d.%02d', abs(total_cents) / 100, abs(total_cents) % 100) AS total_amount,
     order_count
 FROM monthly_totals
 ORDER BY month, country;
@@ -42,7 +43,8 @@ WITH customer_totals AS (
 )
 SELECT
     customer,
-    printf('%d.%02d', total_cents / 100, abs(total_cents % 100)) AS total_amount,
+    CASE WHEN total_cents < 0 THEN '-' ELSE '' END
+        || printf('%d.%02d', abs(total_cents) / 100, abs(total_cents) % 100) AS total_amount,
     order_count
 FROM customer_totals
 ORDER BY total_cents DESC, customer

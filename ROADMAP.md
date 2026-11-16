@@ -4,7 +4,7 @@
 
 Status: completed.
 
-This phase focuses on establishing the repository, selecting a compatible Python toolchain, configuring environment management, and creating the base project structure.
+This phase establishes the repository, Python toolchain, environment management, and base project structure.
 
 Completed tasks:
 
@@ -43,7 +43,7 @@ Completed work:
 - validate SQL definitions against the project constraints,
 - keep the SQL surface limited to read-only operations for the API layer.
 
-The guardrails are implemented in `src/orders_analytics/sql/validation.py` and the view definitions live in `src/orders_analytics/sql/views.py`.
+SQL guardrails live in `src/orders_analytics/sql/validation.py`. View definitions live in `src/orders_analytics/sql/views.py`.
 
 ## Phase 4: API and LLM integration
 
@@ -51,7 +51,7 @@ Status: completed.
 
 Completed work:
 
-- build a FastAPI application with a single natural-language query endpoint,
+- build a FastAPI application with a natural-language query endpoint and a liveness route,
 - generate SQL via an LLM service while keeping the LLM at the boundary and never executing SQL directly,
 - validate SQL before execution using SQLGlot-based guardrails,
 - restrict access to the approved analytical views only,
@@ -80,7 +80,8 @@ Completed work:
 - test the endpoint with a mocked LLM response,
 - verify edge cases for invalid queries and failure paths,
 - harden the SQLite execution and loader paths against memory databases and invalid empty queries,
-- ensure the repository remains deterministic and easy to run locally.
+- bound SQLite query execution time and returned row counts,
+- ensure the repository remains deterministic and straightforward to run locally.
 
 ## Phase 6: final review
 
@@ -89,8 +90,8 @@ Status: completed.
 Completed work:
 
 - review project quality against the challenge requirements,
-- validate that no extra features were added,
+- verify that no out-of-scope business features were added and that `/health` remains a liveness check,
 - confirm the documentation matches the implemented scope,
 - ensure all code, comments, and docs remain in technical English,
 - use integer minor units when aggregating normalized decimal-text amounts in analytical views,
-- prevent API error responses from exposing provider errors or internal database paths.
+- prevent API error responses from exposing raw provider messages or internal database paths.

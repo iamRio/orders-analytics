@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 
 import pandas as pd
@@ -115,6 +116,40 @@ def test_views_sum_minor_units_and_sort_customers_numerically(tmp_path) -> None:
     ]
 
 
+def test_views_preserve_sign_for_negative_subunit_totals(tmp_path) -> None:
+    """Negative amounts below one currency unit must retain their sign in both views."""
+    csv_path = tmp_path / "orders_clean.csv"
+    database_path = tmp_path / "orders.db"
+    pd.DataFrame(
+        [
+            {
+                "date": "2024-01-01",
+                "customer": "Refund Customer",
+                "country": "Spain",
+                "product": "Item",
+                "amount": "-0.49",
+                "status": "returned",
+            }
+        ]
+    ).to_csv(csv_path, index=False)
+
+    load_orders_db(
+        input_path=csv_path,
+        database_url=f"sqlite:///{database_path.as_posix()}",
+    )
+
+    monthly_total = execute_read_only_query(
+        "SELECT total_amount FROM sales_by_month_country",
+        database_url=f"sqlite:///{database_path.as_posix()}",
+    )
+    customer_total = execute_read_only_query(
+        "SELECT total_amount FROM top_customers",
+        database_url=f"sqlite:///{database_path.as_posix()}",
+    )
+    assert monthly_total == [{"total_amount": "-0.49"}]
+    assert customer_total == [{"total_amount": "-0.49"}]
+
+
 def test_relative_database_urls_resolve_from_the_project_root(tmp_path) -> None:
     """Relative SQLite URIs should resolve under the repository root, not the drive root."""
     project_root = Path(__file__).resolve().parents[1]
@@ -140,6 +175,64 @@ def test_execute_read_only_query_rejects_memory_and_empty_sql() -> None:
 
     with pytest.raises(SQLExecutionError):
         execute_read_only_query("   ")
+
+
+def test_execute_read_only_query_enforces_result_limit(tmp_path, monkeypatch) -> None:
+    """The execution helper should reject oversized results instead of silently truncating them."""
+    database_path = tmp_path / "orders.db"
+    with sqlite3.connect(database_path) as connection:
+        connection.execute(
+            "CREATE VIEW sales_by_month_country AS "
+            "SELECT 1 AS month UNION ALL SELECT 2 UNION ALL SELECT 3"
+        )
+    monkeypatch.setattr(settings, "SQLITE_MAX_RESULT_ROWS", 2)
+
+    with pytest.raises(SQLExecutionError) as error:
+        execute_read_only_query(
+            "SELECT month FROM sales_by_month_country",
+            database_url=f"sqlite:///{database_path.as_posix()}",
+        )
+
+    assert error.value.status_code == 422
+    assert "maximum" in error.value.public_message.lower()
+
+
+def test_execute_read_only_query_enforces_execution_timeout(tmp_path, monkeypatch) -> None:
+    """The execution helper should interrupt long-running SQLite queries."""
+    database_path = tmp_path / "orders.db"
+    with sqlite3.connect(database_path) as connection:
+        connection.execute("CREATE VIEW sales_by_month_country AS SELECT 1 AS month")
+    monkeypatch.setattr(settings, "SQLITE_QUERY_TIMEOUT_SECONDS", 0.000001)
+    monkeypatch.setattr(settings, "SQLITE_MAX_RESULT_ROWS", 2_000_000)
+
+    with pytest.raises(SQLExecutionError) as error:
+        execute_read_only_query(
+            "WITH RECURSIVE seq(value) AS ("
+            "SELECT month FROM sales_by_month_country "
+            "UNION ALL SELECT value + 1 FROM seq WHERE value < 1000000"
+            ") SELECT value FROM seq",
+            database_url=f"sqlite:///{database_path.as_posix()}",
+        )
+
+    assert error.value.status_code == 504
+    assert "time limit" in error.value.public_message.lower()
+
+
+def test_execute_read_only_query_classifies_unknown_columns_as_invalid_sql(tmp_path) -> None:
+    """Unknown view columns should be categorized without exposing SQLite internals."""
+    database_path = tmp_path / "orders.db"
+    with sqlite3.connect(database_path) as connection:
+        connection.execute("CREATE TABLE sales_by_month_country (month TEXT)")
+
+    with pytest.raises(SQLExecutionError) as error:
+        execute_read_only_query(
+            "SELECT unknown_column FROM sales_by_month_country",
+            database_url=f"sqlite:///{database_path.as_posix()}",
+        )
+
+    assert error.value.status_code == 422
+    assert "column" in error.value.public_message.lower()
+    assert "unknown_column" not in error.value.public_message
 
 
 def test_load_orders_db_raises_for_missing_required_columns(tmp_path) -> None:

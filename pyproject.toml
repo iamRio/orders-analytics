@@ -1,7 +1,7 @@
 [project]
 name = "orders-analytics"
 version = "0.1.0"
-description = "Project scaffold for an order-analytics technical challenge focused on data cleaning, SQL views, and natural-language querying."
+description = "Order analytics with deterministic data cleaning, SQLite views, and validated natural-language SQL."
 readme = "README.md"
 authors = [
     { name = "Marcos A. Del Río Rodríguez" }
